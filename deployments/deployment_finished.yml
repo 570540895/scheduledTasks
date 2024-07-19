@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Name}}
+  labels:
+    group: test-deployment
+spec:
+  replicas: {{.Replicas}}
+  selector:
+    matchLabels:
+      group: test-pod
+  template:
+    metadata:
+      labels:
+        group: test-pod
+    spec:
+      containers:
+      - image: registry.k8s.io/pause:3.9
+        name: {{.Name}}
+        resources:
+          requests:
+            cpu: {{.CpuRequest}}
+            memory: {{.MemoryRequest}}
+          limits:
+            cpu: {{.CpuRequest}}
+            memory: {{.CpuRequest}}
