@@ -30,7 +30,7 @@ def is_replicas(row1, row2):
 
 def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_count):
     test_name = 'test-{}'.format(str(test_index))
-    deployment_file_name = '{}deployment_finished.yml'.format(deployment_path)
+    deployment_file_name = '../{}deployment_finished.yml'.format(deployment_path)
     pod_name = 'test-finished'
 
     cpu = '{}m'.format(str(cpu_count * 1000))
