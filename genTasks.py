@@ -1,10 +1,13 @@
 import os
-import pandas as pd
 import time
 import logging
 import yaml
 import sched
+import sys
+import pandas as pd
 from string import Template
+
+is_debug = True if sys.gettrace() else False
 
 time_compress = 7
 
@@ -50,17 +53,24 @@ def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_c
         yaml.dump(cfg_yaml_data, fp, sort_keys=False)
 
 
-def exec_test(config_file_name, row_index):
-    print('printing: {} row_index: {}'.format(config_file_name, row_index))
+def exec_test(config_file_name, row_index, time_interval):
+    print('printing: {} row_index: {} time_interval: {}'.format(config_file_name, row_index, time_interval))
 
 
 # execute cluster loader task
 def exec_cluster_loader2(config_file_name):
     cluster_loader2_path = r'../clusterloader'
-    cmd = '{} --testconfig={} --provider=kubemark --provider-configs=ROOT_KUBECONFIG=./config ' \
-          '--kubeconfig=./config --v=2 --enable-exec-service=false --enable-prometheus-server=true ' \
-          '--tear-down-prometheus-server=false  --report-dir="./reports" --nodes=10 2>&1 | tee output.txt'.format(
-            cluster_loader2_path, config_file_name)
+    kubemark_config_path = r'../config'
+    enable_exec_service = r'false'
+    enable_prometheus_server = r'false'
+    tear_down_prometheus_server = r'false'
+    report_dir = r'./reports'
+    output_file_path = r'output.txt'
+    cmd = '{} --testconfig={} --provider=kubemark --provider-configs=ROOT_KUBECONFIG={} ' \
+          '--kubeconfig={} --v=2 --enable-exec-service={} --enable-prometheus-server={} ' \
+          '--tear-down-prometheus-server={}  --report-dir="{}" --nodes=10 2>&1 | tee {}'.format(
+            cluster_loader2_path, config_file_name, kubemark_config_path, kubemark_config_path,
+            enable_exec_service, enable_prometheus_server, tear_down_prometheus_server, report_dir, output_file_path)
     os.system(cmd)
 
 
@@ -99,8 +109,10 @@ def run():
             else:
                 config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
                 create_yml_files(test_index, config_file_name, replicas, pre_row['cpuCount'], pre_row['memoryCount'])
+                exec_func = exec_test if is_debug else exec_cluster_loader2
+                exec_func_params = (config_file_name, row_index, time_interval, ) if is_debug else (config_file_name, )
                 scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
-                                exec_test, (config_file_name, row_index, ))
+                                exec_func, exec_func_params)
                 replicas = 1
                 test_index += 1
         row_index += 1
@@ -108,8 +120,10 @@ def run():
         if row_index == df.shape[0]:
             config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
             create_yml_files(test_index, config_file_name, replicas, pre_row['cpuCount'], pre_row['memoryCount'])
+            exec_func = exec_test if is_debug else exec_cluster_loader2
+            exec_func_params = (config_file_name, row_index, time_interval,) if is_debug else (config_file_name,)
             scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
-                            exec_test, (config_file_name, row_index, ))
+                            exec_func, exec_func_params)
             test_index += 1
 
     scheduler.run()

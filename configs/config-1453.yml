@@ -31,7 +31,7 @@ steps:
     tuningSet: Uniform1qps
     objectBundle:
     - basename: test-deployment
-      objectTemplatePath: deployments/deployment_finished.yml
+      objectTemplatePath: ../deployments/deployment_finished.yml
       templateFillMap:
         Name: test-finished
         Replicas: 1
