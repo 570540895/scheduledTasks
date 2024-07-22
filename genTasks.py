@@ -96,12 +96,14 @@ def run():
     start_interval = 30
     # 实际任务开始执行时间
     exec_start_time = int(time.time()) + start_interval
+    # 任务启动延迟阈值
+    time_interval_threshold = 76
 
     '''TODO: if row['state'] == 'running:
     '''
 
     for _, row in df.iterrows():
-        time_interval = 0 if row['state'] == 'running' \
+        time_interval = 0 if row['state'] == 'running' or row['startTime'] < csv_start_time \
             else int((row['startTime'] - csv_start_time) / time_compress)
         if row_index > 0:
             if is_replicas(pre_row, row):
@@ -111,8 +113,9 @@ def run():
                 create_yml_files(test_index, config_file_name, replicas, pre_row['cpuCount'], pre_row['memoryCount'])
                 exec_func = exec_test if is_debug else exec_cluster_loader2
                 exec_func_params = (config_file_name, row_index, time_interval, ) if is_debug else (config_file_name, )
-                scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
-                                exec_func, exec_func_params)
+                if time_interval >= time_interval_threshold:
+                    scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
+                                    exec_func, exec_func_params)
                 replicas = 1
                 test_index += 1
         row_index += 1
@@ -122,8 +125,9 @@ def run():
             create_yml_files(test_index, config_file_name, replicas, pre_row['cpuCount'], pre_row['memoryCount'])
             exec_func = exec_test if is_debug else exec_cluster_loader2
             exec_func_params = (config_file_name, row_index, time_interval,) if is_debug else (config_file_name,)
-            scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
-                            exec_func, exec_func_params)
+            if time_interval >= time_interval_threshold:
+                scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
+                                exec_func, exec_func_params)
             test_index += 1
 
     scheduler.run()
