@@ -33,21 +33,27 @@ def is_replicas(row1, row2):
 
 def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_count):
     test_name = 'test-{}'.format(str(test_index))
+    pod_group_name = 'test-pod-{}'.format(str(test_index))
+    deployment_group_name = 'test-deployment-{}'.format(str(test_index))
     deployment_file_name = '../{}deployment_finished.yml'.format(deployment_path)
     pod_name = 'test-finished'
 
     cpu = '{}m'.format(str(cpu_count * 1000))
     memory = '{}Mi'.format(str(1024 * memory_count))
+    duration = '1m'
 
     with open(cfg_template_path, encoding='utf-8') as fp:
         read_cfg = fp.read()
         config_template = Template(read_cfg)
         cfg_s = config_template.safe_substitute({'testName': test_name,
+                                                 'podGroupName': pod_group_name,
+                                                 'deploymentGroupName': deployment_group_name,
                                                  'objectTemplatePath': deployment_file_name,
                                                  'name': pod_name,
                                                  'replicas': replicas,
                                                  'cpu': cpu,
-                                                 'memory': memory})
+                                                 'memory': memory,
+                                                 'duration': duration})
     cfg_yaml_data = yaml.safe_load(cfg_s)
     with open(config_file_name, 'w') as fp:
         yaml.dump(cfg_yaml_data, fp, sort_keys=False)
@@ -64,7 +70,7 @@ def exec_cluster_loader2(config_file_name):
     enable_exec_service = r'false'
     enable_prometheus_server = r'false'
     tear_down_prometheus_server = r'false'
-    report_dir = r'./reports'
+    report_dir = r'../reports'
     output_file_path = r'output.txt'
     cmd = '{} --testconfig={} --provider=kubemark --provider-configs=ROOT_KUBECONFIG={} ' \
           '--kubeconfig={} --v=2 --enable-exec-service={} --enable-prometheus-server={} ' \

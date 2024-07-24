@@ -3,24 +3,24 @@ kind: Deployment
 metadata:
   name: {{.Name}}
   labels:
-    group: test-deployment
+    group: {{.DeploymentGroupName}}
 spec:
   replicas: {{.Replicas}}
   selector:
     matchLabels:
-      group: test-pod
+      group: {{.PodGroupName}}
   template:
     metadata:
       labels:
-        group: test-pod
+        group: {{.PodGroupName}}
     spec:
       containers:
       - image: registry.k8s.io/pause:3.9
         name: {{.Name}}
         resources:
           requests:
-            cpu: ${cpuRequest}
-            memory: ${memoryRequest}
+            cpu: {{.CpuRequest}}
+            memory: {{.MemoryRequest}}
           limits:
-            cpu: ${cpuLimit}
-            memory: ${memoryLimit}
+            cpu: {{.CpuRequest}}
+            memory: {{.MemoryRequest}}
