@@ -11,15 +11,14 @@ is_debug = True if sys.gettrace() else False
 
 time_compress = 7
 
-log_file_path = r'logs/test.log'
-logging.basicConfig(filename=log_file_path, level=logging.DEBUG)
+log_file = r'logs/test.log'
+logging.basicConfig(filename=log_file, level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
-csv_path = r'data/test.csv'
-sorted_csv_path = r'data/sorted_test.csv'
+csv_file = r'data/test.csv'
+sorted_csv_file = r'data/sorted_test.csv'
 
-cfg_template_path = r'templates/config_template.yml'
-dpl_template_path = r'templates/deployment_template.yml'
+cfg_template_path = r'templates/'
 
 config_path = r'configs/'
 deployment_path = r'deployments/'
@@ -31,18 +30,20 @@ def is_replicas(row1, row2):
            and row1['endTime'] == row2['endTime']
 
 
-def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_count):
+def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_count, is_running, timestamp_duration):
     test_name = 'test-{}'.format(str(test_index))
     pod_group_name = 'test-pod-{}'.format(str(test_index))
     deployment_group_name = 'test-deployment-{}'.format(str(test_index))
-    deployment_file_name = '../{}deployment_finished.yml'.format(deployment_path)
+    deployment_file_name = '../{}{}'.format(deployment_path, 'deployment_finished.yml')
     pod_name = 'test-finished'
 
     cpu = '{}m'.format(str(cpu_count * 1000))
     memory = '{}Mi'.format(str(1024 * memory_count))
-    duration = '1m'
+    duration = '{}m'.format(timestamp_duration)
 
-    with open(cfg_template_path, encoding='utf-8') as fp:
+    cfg_template_file = '{}{}'.format(cfg_template_path,
+                                      'running_config_template.yml' if is_running else 'finished_config_template.yml')
+    with open(cfg_template_file, encoding='utf-8') as fp:
         read_cfg = fp.read()
         config_template = Template(read_cfg)
         cfg_s = config_template.safe_substitute({'testName': test_name,
@@ -82,10 +83,10 @@ def exec_cluster_loader2(config_file_name):
 
 def run():
     try:
-        df = pd.read_csv(csv_path)
+        df = pd.read_csv(csv_file)
         assert df.shape[0] >= 2
         df = df.sort_values('startTime', ascending=True)
-        df.to_csv(sorted_csv_path, index=False)
+        df.to_csv(sorted_csv_file, index=False)
     except Exception as e:
         log.error(e)
         print(e)
@@ -109,14 +110,21 @@ def run():
     '''
 
     for _, row in df.iterrows():
-        time_interval = 0 if row['state'] == 'running' or row['startTime'] < csv_start_time \
-            else int((row['startTime'] - csv_start_time) / time_compress)
-        if row_index > 0:
+        if row_index == 0:
+            row_index += 1
+            pre_row = row
+        else:
             if is_replicas(pre_row, row):
                 replicas += 1
             else:
+                time_interval = 0 if pre_row['state'] == 'running' or pre_row['startTime'] < csv_start_time \
+                    else int((pre_row['startTime'] - csv_start_time) / time_compress)
+                is_running = True if pre_row['state'] == 'running' else False
+                duration = 0 if is_running else \
+                    max(1, int((pre_row['endTime'] - max(pre_row['startTime'], csv_start_time)) / (60 * time_compress)))
                 config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
-                create_yml_files(test_index, config_file_name, replicas, pre_row['cpuCount'], pre_row['memoryCount'])
+                create_yml_files(test_index, config_file_name, replicas,
+                                 pre_row['cpuCount'], pre_row['memoryCount'], is_running, duration)
                 exec_func = exec_test if is_debug else exec_cluster_loader2
                 exec_func_params = (config_file_name, row_index, time_interval, ) if is_debug else (config_file_name, )
                 if time_interval >= time_interval_threshold:
@@ -124,16 +132,23 @@ def run():
                                     exec_func, exec_func_params)
                 replicas = 1
                 test_index += 1
-        row_index += 1
-        pre_row = row
+            row_index += 1
+            pre_row = row
         if row_index == df.shape[0]:
+            time_interval = 0 if pre_row['state'] == 'running' or pre_row['startTime'] < csv_start_time \
+                else int((pre_row['startTime'] - csv_start_time) / time_compress)
+            is_running = True if pre_row['state'] == 'running' else False
+            duration = 0 if is_running else \
+                max(1, int((pre_row['endTime'] - max(pre_row['startTime'], csv_start_time)) / (60 * time_compress)))
             config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
-            create_yml_files(test_index, config_file_name, replicas, pre_row['cpuCount'], pre_row['memoryCount'])
+            create_yml_files(test_index, config_file_name, replicas,
+                             pre_row['cpuCount'], pre_row['memoryCount'], is_running, duration)
             exec_func = exec_test if is_debug else exec_cluster_loader2
             exec_func_params = (config_file_name, row_index, time_interval,) if is_debug else (config_file_name,)
             if time_interval >= time_interval_threshold:
                 scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
                                 exec_func, exec_func_params)
+            replicas = 1
             test_index += 1
 
     scheduler.run()

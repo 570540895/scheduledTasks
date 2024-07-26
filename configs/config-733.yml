@@ -12,7 +12,7 @@ steps:
     Method: PodStartupLatency
     Params:
       action: start
-      labelSelector: group = test-pod
+      labelSelector: group = test-pod-733
       threshold: 20s
   - Identifier: WaitForControlledPodsRunning
     Method: WaitForControlledPodsRunning
@@ -20,7 +20,7 @@ steps:
       action: start
       apiVersion: apps/v1
       kind: Deployment
-      labelSelector: group = test-deployment
+      labelSelector: group = test-deployment-733
       operationTimeout: 120s
 - name: Create deployment
   phases:
@@ -35,6 +35,8 @@ steps:
       templateFillMap:
         Name: test-finished
         Replicas: 1
+        DeploymentGroupName: test-deployment-733
+        PodGroupName: test-pod-733
         CpuRequest: 64000m
         MemoryRequest: 458752Mi
 - name: Wait for pods to be running
@@ -43,6 +45,29 @@ steps:
     Method: WaitForControlledPodsRunning
     Params:
       action: gather
+- name: Wait pods running
+  measurements:
+  - Identifier: Wait
+    Method: Sleep
+    Params:
+      duration: 1m
+- name: Deleting pods
+  phases:
+  - namespaceRange:
+      min: 1
+      max: 1
+    replicasPerNamespace: 0
+    tuningSet: Uniform1qps
+    objectBundle:
+    - basename: test-deployment
+      objectTemplatePath: ../deployments/deployment_finished.yml
+      templateFillMap:
+        Name: test-finished
+        Replicas: 1
+        DeploymentGroupName: test-deployment-733
+        PodGroupName: test-pod-733
+        CpuRequest: 64000m
+        MemoryRequest: 458752Mi
 - name: Measure pod startup latency
   measurements:
   - Identifier: PodStartupLatency

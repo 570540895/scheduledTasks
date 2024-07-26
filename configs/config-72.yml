@@ -12,7 +12,7 @@ steps:
     Method: PodStartupLatency
     Params:
       action: start
-      labelSelector: group = test-pod
+      labelSelector: group = test-pod-72
       threshold: 20s
   - Identifier: WaitForControlledPodsRunning
     Method: WaitForControlledPodsRunning
@@ -20,7 +20,7 @@ steps:
       action: start
       apiVersion: apps/v1
       kind: Deployment
-      labelSelector: group = test-deployment
+      labelSelector: group = test-deployment-72
       operationTimeout: 120s
 - name: Create deployment
   phases:
@@ -35,6 +35,8 @@ steps:
       templateFillMap:
         Name: test-finished
         Replicas: 5
+        DeploymentGroupName: test-deployment-72
+        PodGroupName: test-pod-72
         CpuRequest: 7000m
         MemoryRequest: 65536Mi
 - name: Wait for pods to be running
