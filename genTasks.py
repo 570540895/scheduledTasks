@@ -72,7 +72,7 @@ def exec_cluster_loader2(config_file_name):
     tear_down_prometheus_server = r'false'
     report_dir = r'../reports'
     output_file_path = r'output.txt'
-    cmd = 'sudo {} --testconfig={} --provider=kubemark --provider-configs=ROOT_KUBECONFIG={} ' \
+    cmd = '{} --testconfig={} --provider=kubemark --provider-configs=ROOT_KUBECONFIG={} ' \
           '--kubeconfig={} --v=2 --enable-exec-service={} --enable-prometheus-server={} ' \
           '--tear-down-prometheus-server={}  --report-dir="{}" --nodes=10 2>&1 | tee {}'.format(
             cluster_loader2_path, config_file_name, kubemark_config_path, kubemark_config_path,
