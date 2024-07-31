@@ -1,13 +1,10 @@
 name: ${testName}
-
 namespace:
   number: 1
-
 tuningSets:
 - name: Uniform1qps
   qpsLoad:
     qps: 1
-
 steps:
 - name: Start measurements
   measurements:
@@ -25,7 +22,6 @@ steps:
       kind: Deployment
       labelSelector: group = ${deploymentGroupName}
       operationTimeout: 120s
-
 - name: Create deployment
   phases:
   - namespaceRange:
@@ -43,44 +39,38 @@ steps:
         PodGroupName: ${podGroupName}
         CpuRequest: ${cpu}
         MemoryRequest: ${memory}
-
 - name: Wait for pods to be running
   measurements:
   - Identifier: WaitForControlledPodsRunning
     Method: WaitForControlledPodsRunning
     Params:
       action: gather
-
 - name: Wait pods running
   measurements:
-    - Identifier: Wait
-      Method: Sleep
-      Params:
-        duration: ${duration}
-
+  - Identifier: Wait
+    Method: Sleep
+    Params:
+      duration: ${duration}
 - name: Deleting pods
   phases:
-    - namespaceRange:
-        min: 1
-        max: 1
-      replicasPerNamespace: 0
-      tuningSet: Uniform1qps
-      objectBundle:
-        - basename: test-deployment
-          objectTemplatePath: ${objectTemplatePath}
-          templateFillMap:
-            Name: ${name}
-            Replicas: ${replicas}
-            DeploymentGroupName: ${deploymentGroupName}
-            PodGroupName: ${podGroupName}
-            CpuRequest: ${cpu}
-            MemoryRequest: ${memory}
-
-
+  - namespaceRange:
+      min: 1
+      max: 1
+    replicasPerNamespace: 0
+    tuningSet: Uniform1qps
+    objectBundle:
+    - basename: test-deployment
+      objectTemplatePath: ${objectTemplatePath}
+      templateFillMap:
+        Name: ${name}
+        Replicas: ${replicas}
+        DeploymentGroupName: ${deploymentGroupName}
+        PodGroupName: ${podGroupName}
+        CpuRequest: ${cpu}
+        MemoryRequest: ${memory}
 - name: Measure pod startup latency
   measurements:
   - Identifier: PodStartupLatency
     Method: PodStartupLatency
     Params:
       action: gather
-

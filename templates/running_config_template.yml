@@ -1,13 +1,10 @@
 name: ${testName}
-
 namespace:
   number: 1
-
 tuningSets:
 - name: Uniform1qps
   qpsLoad:
     qps: 1
-
 steps:
 - name: Start measurements
   measurements:
@@ -48,6 +45,12 @@ steps:
     Method: WaitForControlledPodsRunning
     Params:
       action: gather
+- name: Wait pods running
+  measurements:
+  - Identifier: Wait
+    Method: Sleep
+    Params:
+      duration: 10m
 - name: Measure pod startup latency
   measurements:
   - Identifier: PodStartupLatency
