@@ -21,7 +21,7 @@ steps:
       apiVersion: apps/v1
       kind: Deployment
       labelSelector: group = test-deployment-349
-      operationTimeout: 120s
+      operationTimeout: 200s
 - name: Create deployment
   phases:
   - namespaceRange:

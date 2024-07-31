@@ -70,6 +70,7 @@ def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_c
     with open(config_file_name, 'w') as fp:
         yaml.dump(cfg_yaml_data, fp, sort_keys=False)
 
+
 def exec_test(config_file_name, row_index, time_interval):
     print('printing: {} row_index: {} time_interval: {}'.format(config_file_name, row_index, time_interval))
 
