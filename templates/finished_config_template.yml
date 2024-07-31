@@ -16,7 +16,7 @@ steps:
     Params:
       action: start
       labelSelector: group = ${podGroupName}
-      threshold: 20s
+      threshold: 120s
   - Identifier: WaitForControlledPodsRunning
     Method: WaitForControlledPodsRunning
     Params:

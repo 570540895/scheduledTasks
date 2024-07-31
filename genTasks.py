@@ -9,7 +9,13 @@ from string import Template
 
 is_debug = True if sys.gettrace() else False
 
+# 时间压缩比
 time_compress = 7
+
+# 构造负载倍数
+load_times = 2
+# 构造负载延迟(秒)
+load_latency = 3
 
 log_file = r'logs/test.log'
 logging.basicConfig(filename=log_file, level=logging.DEBUG)

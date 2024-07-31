@@ -13,7 +13,7 @@ steps:
     Params:
       action: start
       labelSelector: group = test-pod-2173
-      threshold: 20s
+      threshold: 120s
   - Identifier: WaitForControlledPodsRunning
     Method: WaitForControlledPodsRunning
     Params:
