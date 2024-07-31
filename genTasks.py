@@ -17,6 +17,11 @@ load_times = 2
 # 构造负载延迟(秒)
 load_latency = 3
 
+# 预留时间用于生成yml文件
+start_interval = 30
+# 任务启动延迟阈值
+time_interval_threshold = 76
+
 log_file = r'logs/test.log'
 logging.basicConfig(filename=log_file, level=logging.DEBUG)
 log = logging.getLogger(__name__)
@@ -104,15 +109,9 @@ def run():
 
     scheduler = sched.scheduler(time.time, time.sleep)
     csv_start_time = int(time.mktime(time.strptime(str(df['time'][0]), '%Y%m%d')))
-    # 预留时间用于生成yml文件
-    start_interval = 30
+
     # 实际任务开始执行时间
     exec_start_time = int(time.time()) + start_interval
-    # 任务启动延迟阈值
-    time_interval_threshold = 76
-
-    '''TODO: if row['state'] == 'running:
-    '''
 
     for _, row in df.iterrows():
         if row_index == 0:
