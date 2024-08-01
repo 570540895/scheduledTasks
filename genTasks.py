@@ -20,7 +20,7 @@ load_latency = 3
 # 预留时间用于生成yml文件
 start_interval = 30
 # 任务启动延迟阈值
-time_interval_threshold = 76
+time_interval_threshold = 0
 
 log_file = r'logs/test.log'
 logging.basicConfig(filename=log_file, level=logging.DEBUG)
@@ -86,7 +86,7 @@ def exec_cluster_loader2(config_file_name):
     output_file_path = r'output.txt'
     cmd = '{} --testconfig={} --provider=kubemark --provider-configs=ROOT_KUBECONFIG={} ' \
           '--kubeconfig={} --v=2 --enable-exec-service={} --enable-prometheus-server={} ' \
-          '--tear-down-prometheus-server={}  --report-dir="{}" --nodes=10 2>&1 | tee {}'.format(
+          '--tear-down-prometheus-server={}  --report-dir="{}" --nodes=10 >{} 2>&1 &'.format(
             cluster_loader2_path, config_file_name, kubemark_config_path, kubemark_config_path,
             enable_exec_service, enable_prometheus_server, tear_down_prometheus_server, report_dir, output_file_path)
     os.system(cmd)
@@ -122,7 +122,7 @@ def run():
             if is_replicas(pre_row, row):
                 replicas += 1
             else:
-                time_interval = 0 if pre_row['state'] == 'running' or pre_row['startTime'] < csv_start_time \
+                time_interval = 0 if pre_row['startTime'] < csv_start_time \
                     else int((pre_row['startTime'] - csv_start_time) / time_compress)
                 is_running = True if pre_row['state'] == 'running' else False
                 duration = 0 if is_running else \
@@ -140,7 +140,7 @@ def run():
             row_index += 1
             pre_row = row
         if row_index == df.shape[0]:
-            time_interval = 0 if pre_row['state'] == 'running' or pre_row['startTime'] < csv_start_time \
+            time_interval = 0 if pre_row['startTime'] < csv_start_time \
                 else int((pre_row['startTime'] - csv_start_time) / time_compress)
             is_running = True if pre_row['state'] == 'running' else False
             duration = 0 if is_running else \
