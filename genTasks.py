@@ -13,7 +13,7 @@ is_debug = True if sys.gettrace() else False
 time_compress = 7
 
 # 构造负载倍数
-load_times = 2
+load_times = 1
 # 构造负载延迟(秒)
 load_latency = 3
 
@@ -41,7 +41,8 @@ def is_replicas(row1, row2):
            and row1['endTime'] == row2['endTime']
 
 
-def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_count, is_running, timestamp_duration):
+def create_yml_files(test_index, replicas, cpu_count, memory_count, is_running, timestamp_duration):
+    config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
     test_name = 'test-{}'.format(str(test_index))
     pod_group_name = 'test-pod-{}'.format(str(test_index))
     deployment_group_name = 'test-deployment-{}'.format(str(test_index))
@@ -71,12 +72,14 @@ def create_yml_files(test_index, config_file_name, replicas, cpu_count, memory_c
         yaml.dump(cfg_yaml_data, fp, sort_keys=False)
 
 
-def exec_test(config_file_name, row_index, time_interval):
+def exec_test(test_index, row_index, time_interval):
+    config_file_name = 'config-{}.yml'.format(str(test_index))
     print('printing: {} row_index: {} time_interval: {}'.format(config_file_name, row_index, time_interval))
 
 
 # execute cluster loader task
-def exec_cluster_loader2(config_file_name):
+def exec_cluster_loader2(test_index):
+    config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
     cluster_loader2_path = r'../clusterloader'
     kubemark_config_path = r'../config'
     enable_exec_service = r'false'
@@ -127,16 +130,16 @@ def run():
                 is_running = True if pre_row['state'] == 'running' else False
                 duration = 0 if is_running else \
                     max(1, int((pre_row['endTime'] - max(pre_row['startTime'], csv_start_time)) / (60 * time_compress)))
-                config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
-                create_yml_files(test_index, config_file_name, replicas,
-                                 pre_row['cpuCount'], pre_row['memoryCount'], is_running, duration)
-                exec_func = exec_test if is_debug else exec_cluster_loader2
-                exec_func_params = (config_file_name, row_index, time_interval, ) if is_debug else (config_file_name, )
-                if time_interval >= time_interval_threshold:
-                    scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
-                                    exec_func, exec_func_params)
+                for i in range(load_times):
+                    create_yml_files(test_index,  replicas, pre_row['cpuCount'],
+                                     pre_row['memoryCount'], is_running, duration)
+                    exec_func = exec_test if is_debug else exec_cluster_loader2
+                    exec_func_params = (test_index, row_index, time_interval, ) if is_debug else (test_index, )
+                    if time_interval >= time_interval_threshold:
+                        scheduler.enter(exec_start_time + time_interval + i*load_latency - int(time.time()), 0,
+                                        exec_func, exec_func_params)
+                    test_index += 1
                 replicas = 1
-                test_index += 1
             row_index += 1
             pre_row = row
         if row_index == df.shape[0]:
@@ -145,16 +148,16 @@ def run():
             is_running = True if pre_row['state'] == 'running' else False
             duration = 0 if is_running else \
                 max(1, int((pre_row['endTime'] - max(pre_row['startTime'], csv_start_time)) / (60 * time_compress)))
-            config_file_name = '{}config-{}.yml'.format(config_path, str(test_index))
-            create_yml_files(test_index, config_file_name, replicas,
-                             pre_row['cpuCount'], pre_row['memoryCount'], is_running, duration)
-            exec_func = exec_test if is_debug else exec_cluster_loader2
-            exec_func_params = (config_file_name, row_index, time_interval,) if is_debug else (config_file_name,)
-            if time_interval >= time_interval_threshold:
-                scheduler.enter(exec_start_time + time_interval - int(time.time()), 0,
-                                exec_func, exec_func_params)
+            for i in range(load_times):
+                create_yml_files(test_index, replicas, pre_row['cpuCount'],
+                                 pre_row['memoryCount'], is_running, duration)
+                exec_func = exec_test if is_debug else exec_cluster_loader2
+                exec_func_params = (test_index, row_index, time_interval,) if is_debug else (test_index,)
+                if time_interval >= time_interval_threshold:
+                    scheduler.enter(exec_start_time + time_interval + i*load_latency - int(time.time()), 0,
+                                    exec_func, exec_func_params)
+                test_index += 1
             replicas = 1
-            test_index += 1
 
     scheduler.run()
 
