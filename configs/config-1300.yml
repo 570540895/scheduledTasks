@@ -51,6 +51,23 @@ steps:
     Method: Sleep
     Params:
       duration: 10m
+- name: Deleting pods
+  phases:
+  - namespaceRange:
+      min: 1
+      max: 1
+    replicasPerNamespace: 0
+    tuningSet: Uniform1qps
+    objectBundle:
+    - basename: test-deployment
+      objectTemplatePath: ../deployments/deployment_finished.yml
+      templateFillMap:
+        Name: test-finished
+        Replicas: 1
+        DeploymentGroupName: test-deployment-1300
+        PodGroupName: test-pod-1300
+        CpuRequest: 16000m
+        MemoryRequest: 262144Mi
 - name: Measure pod startup latency
   measurements:
   - Identifier: PodStartupLatency
