@@ -100,6 +100,7 @@ def run():
         df = pd.read_csv(csv_file)
         assert df.shape[0] >= 2
         df = df.sort_values('startTime', ascending=True)
+        df = df.reset_index(drop=True)
         df.to_csv(sorted_csv_file, index=False)
     except Exception as e:
         log.error(e)
